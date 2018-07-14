@@ -15,11 +15,11 @@ r2frida.pluginRegister('interc', function (command) {
             Interceptor.attach(f, {
                 onEnter: function (args) {
                     console.log('\n===============');
-                    console.log(argsCmd[1] + ' called from:\n' +
+                    console.log("1. " + argsCmd[1] + ' called from:\n' +
                         Thread.backtrace(this.context, Backtracer.ACCURATE)
                         .map(DebugSymbol.fromAddress).join('\n'));
 
-                    console.log('Base Arguments:');
+                    console.log('\n2. Base Arguments:');
                     for (var i = 0; i < argsCmd[2]; i++) {
                         this.args = [];
                         this.args[i] = args[i];
@@ -47,16 +47,16 @@ r2frida.pluginRegister('interc', function (command) {
                             args[index] = ptr(arg);
                         });
                     }
-                    console.log('Context information:');
+                    console.log('\n3. Context information:');
                     console.log('Context  : ' + JSON.stringify(this.context));
                     console.log('Return   : ' + this.returnAddress);
                     console.log('ThreadId : ' + this.threadId);
                     console.log('Depth    : ' + this.depth);
                     console.log('Errornr  : ' + this.err);
-                    console.log('===============');
                 },
                 onLeave: function (result) {
-                    console.log('Result: ' + result);
+                    console.log('\n4. Result for ' + argsCmd[1] + ': ' + result);
+                    console.log('===============\n');
                 }
             });
             return '[*] Attached!';
