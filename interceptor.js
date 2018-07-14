@@ -55,7 +55,8 @@ r2frida.pluginRegister('interc', function (command) {
                     console.log('Errornr  : ' + this.err);
                 },
                 onLeave: function (result) {
-                    console.log('\n4. Result for ' + argsCmd[1] + ': ' + result);
+                    console.log('\n4. Result for ' + argsCmd[1] + ':\n');
+                    console.log(result);
                     console.log('===============\n');
                 }
             });
