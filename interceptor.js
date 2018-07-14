@@ -3,27 +3,60 @@
 r2frida.pluginRegister('interc', function (command) {
     if (command === 'interc') {
         return function (argsCmd) {
-            if (argsCmd.length < 2) {
-                console.log('Usage: interc <library_name> <function>');
+            if (argsCmd.length < 3) {
+                console.log('Usage: interc <library_name> <function> <nmb_args_fn> <fmt> (<index_arg:new_values>)\n');
+                console.log('Example: \\interc USER32.DLL MessageBoxW 4 %d,%S,%S,%d 2:0x12345678,3:0x30\n');
                 return '';
             }
 
             var f = Module.findExportByName(argsCmd[0],
                 argsCmd[1]);
+            var format = argsCmd[3].split(',');
             Interceptor.attach(f, {
                 onEnter: function (args) {
+                    console.log('\n===============');
                     console.log(argsCmd[1] + ' called from:\n' +
                         Thread.backtrace(this.context, Backtracer.ACCURATE)
-                        .map(DebugSymbol.fromAddress).join('\n') + '\n');
+                        .map(DebugSymbol.fromAddress).join('\n'));
+
+                    console.log('Base Arguments:');
+                    for (var i = 0; i < argsCmd[2]; i++) {
+                        this.args = [];
+                        this.args[i] = args[i];
+                        switch (format[i]) {
+                            case '%d':
+                                console.log(this.args[i].toInt32());
+                                break;
+                            case '%s':
+                                console.log(Memory.readCString(this.args[i]));
+                                break;
+                            case '%S':
+                                console.log(Memory.readUtf16String(this.args[i]));
+                                break;
+                            default:
+                                console.log(this.args[i]);
+                                break;
+                        }
+                    }
+                    if (argsCmd[4]) {
+                        var newArgs = argsCmd[4].split(',');
+                        newArgs.forEach(function (newArg) {
+                            var indexArg = newArg.split(':');
+                            var index = parseInt(indexArg[0]);
+                            var arg = indexArg[1];
+                            args[index] = ptr(arg);
+                        });
+                    }
                     console.log('Context information:');
                     console.log('Context  : ' + JSON.stringify(this.context));
                     console.log('Return   : ' + this.returnAddress);
                     console.log('ThreadId : ' + this.threadId);
                     console.log('Depth    : ' + this.depth);
                     console.log('Errornr  : ' + this.err);
+                    console.log('===============');
                 },
                 onLeave: function (result) {
-                    console.log("Result: " + result);
+                    console.log('Result: ' + result);
                 }
             });
             return '[*] Attached!';
