@@ -4,13 +4,14 @@ r2frida.pluginRegister('interc', function (command) {
     if (command === 'interc') {
         return function (argsCmd) {
             if (argsCmd.length < 3) {
-                console.log('Usage: interc <library_name> <function> <nmb_args_fn> <fmt> (<index_arg:new_values>)\n');
-                console.log('Example: \\interc USER32.DLL MessageBoxW 4 %d,%S,%S,%d 2:0x12345678,3:0x30\n');
+                console.log('Usage: interc <library_name> <function> <nmb_args_fn> <fmt> (<index_arg/return:new_values>)\n');
+                console.log('Example: \\interc USER32.DLL MessageBoxW 4 %d,%S,%S,%d 2:0x12345678,3:0x30,r:0x0\n');
                 return '';
             }
 
             var f = Module.findExportByName(argsCmd[0],
                 argsCmd[1]);
+            var newReturnVal;
             var format = argsCmd[3].split(',');
             Interceptor.attach(f, {
                 onEnter: function (args) {
@@ -19,7 +20,7 @@ r2frida.pluginRegister('interc', function (command) {
                         Thread.backtrace(this.context, Backtracer.ACCURATE)
                         .map(DebugSymbol.fromAddress).join('\n'));
 
-                    console.log('\n2. Base Arguments:');
+                    console.log('\n2. Original Arguments:');
                     for (var i = 0; i < argsCmd[2]; i++) {
                         this.args = [];
                         this.args[i] = args[i];
@@ -44,7 +45,11 @@ r2frida.pluginRegister('interc', function (command) {
                             var indexArg = newArg.split(':');
                             var index = parseInt(indexArg[0]);
                             var arg = indexArg[1];
-                            args[index] = ptr(arg);
+                            if (index !== "r") {
+                                args[index] = ptr(arg);
+                            } else {
+                                newReturnVal = arg;
+                            }
                         });
                     }
                     console.log('\n3. Context information:');
@@ -55,9 +60,12 @@ r2frida.pluginRegister('interc', function (command) {
                     console.log('Errornr  : ' + this.err);
                 },
                 onLeave: function (result) {
-                    console.log('\n4. Result for ' + argsCmd[1] + ':');
+                    console.log('\n4. Orginial result for ' + argsCmd[1] + ':');
                     console.log(result);
                     console.log('===============\n');
+                    if (newReturnVal) {
+                        result = ptr(newReturnVal);
+                    }
                 }
             });
             return '[*] Attached!';
