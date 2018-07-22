@@ -56,3 +56,32 @@ Example:
 ```
 \resO module exports:advapi32.dll!*
 ```
+
+## stalky.js
+Logs some specific instructions (useful for packed binaries for example).
+
+Usage:
+```
+\stalky <tid> <instruction(s)> (<operands>)
+```
+
+Example:
+```
+\stalky * jmp eax,ebx,ecx,edx,esi,edi
+```
+
+## apilogger.js
+Logs every call and find the symbols when possible.
+
+Usage:
+```
+\apilog <tid/*>
+```
+
+## tracer.js
+Traces and log everything in a file.
+
+Usage:
+```
+\tracer <tid/*> <filepath>
+```
